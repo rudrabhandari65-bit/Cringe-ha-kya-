@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cringe Ha Kya</title>
+<style>
+  html,body{margin:0;padding:0;overflow:hidden;background:#111;color:#fff;}
+  canvas{background:#111;display:block;margin:0 auto;}
+  #controls{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);
+            display:flex;gap:20px;z-index:5;}
+  button{background:#222;border:2px solid #fff;color:#fff;
+          padding:10px 20px;font-size:18px;border-radius:10px;}
+  button:active{background:#555;}
+</style>
+</head>
+<body>
+<canvas id="game" width="800" height="450"></canvas>
+<div id="controls">
+  <button id="left">◀</button>
+  <button id="jump">⬆</button>
+  <button id="right">▶</button>
+</div>
+
+<audio id="bg" src="https://cdn.pixabay.com/download/audio/2023/02/28/audio_3b9e6ddab2.mp3?filename=funny-background-144208.mp3" loop></audio>
+<audio id="jumpSound" src="https://cdn.pixabay.com/download/audio/2021/09/06/audio_7d11c6b74d.mp3?filename=jump-1-80237.mp3"></audio>
+<audio id="deathSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8712c4946.mp3?filename=error-126627.mp3"></audio>
+<audio id="winSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_4b9928a0d5.mp3?filename=success-1-6297.mp3"></audio>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const keys={left:false,right:false,jump:false};
+let level=1,gravity=0.5,player,platforms,traps,goal,jumping=false,velY=0,bg=document.getElementById("bg");
+
+function resetLevel(){
+  player={x:50,y:350,w:30,h:30,velX:0};
+  if(level===1){
+    platforms=[[0,400,800,50],[200,320,100,10],[400,260,100,10],[600,200,100,10]];
+    traps=[[300,390,30,10]];
+    goal={x:750,y:160,w:30,h:30};
+  }else if(level===2){
+    platforms=[[0,400,800,50],[150,330,80,10],[300,260,80,10],[450,190,80,10],[600,120,100,10]];
+    traps=[[230,390,40,10],[380,250,40,10],[530,180,40,10]];
+    goal={x:730,y:70,w:30,h:30};
+  }else{
+    platforms=[[0,400,800,50],[120,330,80,10],[270,270,80,10],[420,210,80,10],[570,150,80,10],[700,90,80,10]];
+    traps=[[200,390,40,10],[350,260,40,10],[500,200,40,10],[650,140,40,10]];
+    goal={x:760,y:50,w:30,h:30};
+  }
+}
+resetLevel();
+bg.volume=0.3;bg.play().catch(()=>{});
+
+function rectCollide(a,b){
+  return a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y;
+}
+
+function update(){
+  if(keys.left) player.velX=-3;
+  else if(keys.right) player.velX=3;
+  else player.velX=0;
+
+  if(keys.jump && !jumping){velY=-10;jumping=true;
+    document.getElementById("jumpSound").play();}
+
+  velY+=gravity;player.y+=velY;player.x+=player.velX;
+
+  platforms.forEach(p=>{
+    if(rectCollide(player,{x:p[0],y:p[1],w:p[2],h:p[3]}) && velY>=0){
+      player.y=p[1]-player.h;velY=0;jumping=false;
+    }
+  });
+
+  traps.forEach(t=>{
+    if(rectCollide(player,{x:t[0],y:t[1],w:t[2],h:t[3]})){
+      document.getElementById("deathSound").play();
+      resetLevel();
+    }
+  });
+
+  if(rectCollide(player,goal)){
+    document.getElementById("winSound").play();
+    level++;
+    if(level>3){
+      alert("You finished all 3 levels! Cringe Ha Kya 😜");
+      level=1;
+    }
+    resetLevel();
+  }
+
+  if(player.y>canvas.height){resetLevel();}
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#fff";
+  ctx.fillText("Level "+level,10,20);
+  ctx.fillRect(player.x,player.y,player.w,player.h);
+  ctx.fillStyle="#0f0";
+  ctx.fillRect(goal.x,goal.y,goal.w,goal.h);
+  ctx.fillStyle="#888";
+  platforms.forEach(p=>ctx.fillRect(p[0],p[1],p[2],p[3]));
+  ctx.fillStyle="red";
+  traps.forEach(t=>ctx.fillRect(t[0],t[1],t[2],t[3]));
+}
+
+function gameLoop(){
+  update();draw();requestAnimationFrame(gameLoop);
+}
+gameLoop();
+
+document.getElementById("left").ontouchstart=()=>keys.left=true;
+document.getElementById("left").ontouchend=()=>keys.left=false;
+document.getElementById("right").ontouchstart=()=>keys.right=true;
+document.getElementById("right").ontouchend=()=>keys.right=false;
+document.getElementById("jump").ontouchstart=()=>keys.jump=true;
+document.getElementById("jump").ontouchend=()=>keys.jump=false;
+</script>
+</body>
+</html>
